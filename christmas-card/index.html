@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Christmas Card Generator 🎄</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #ff5858, #f09819);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .input-area {
+      margin: 20px;
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      width: 220px;
+      text-align: center;
+    }
+
+    button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    #downloadBtn {
+      display: none;
+      background-color: #007bff;
+    }
+
+    #downloadBtn:hover {
+      background-color: #0056b3;
+    }
+
+    #musicBtn {
+      background-color: #dc3545;
+    }
+
+    #musicBtn:hover {
+      background-color: #a71d2a;
+    }
+
+    .designs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .design-option {
+      width: 60px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid white;
+      transition: 0.3s;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .design-option:hover {
+      transform: scale(1.1);
+      border-color: gold;
+    }
+
+    .selected {
+      border-color: gold;
+      box-shadow: 0 0 10px gold;
+    }
+
+    .card {
+      margin-top: 30px;
+      width: 300px;
+      height: 300px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.5s ease;
+      background: url('https://i.ibb.co/pbCVyPf/christmas-bg.jpg') no-repeat center/cover;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 10px;
+      border: 2px solid white;
+    }
+
+    .show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .snow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .flake {
+      position: absolute;
+      top: -10px;
+      color: white;
+      font-size: 1em;
+      animation: fall 10s linear infinite;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
+    }
+
+    .upload {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎄 Christmas Card Generator 🎅</h1>
+
+  <div class="input-area">
+    <input type="text" id="nameInput" placeholder="Enter your name..." />
+    <input type="file" id="imageInput" accept="image/*" class="upload" />
+    <button onclick="generateCard()">Generate Card</button>
+    <button id="downloadBtn" onclick="downloadCard()">Download Card</button>
+    <button id="musicBtn" onclick="toggleMusic()">Play Music 🎵</button>
+
+    <div class="designs">
+      <div class="design-option selected" 
+           style="background-image: url('https://i.ibb.co/pbCVyPf/christmas-bg.jpg');" 
+           onclick="selectDesign(this, 'https://i.ibb.co/pbCVyPf/christmas-bg.jpg')"></div>
+      <div class="design-option" 
+           style="background-image: url('https://i.ibb.co/Yy8cmzn/christmas-tree.jpg');" 
+           onclick="selectDesign(this, 'https://i.ibb.co/Yy8cmzn/christmas-tree.jpg')"></div>
+      <div class="design-option" 
+           style="background-image: url('https://i.ibb.co/SRLWkCh/snow-night.jpg');" 
+           onclick="selectDesign(this, 'https://i.ibb.co/SRLWkCh/snow-night.jpg')"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card"></div>
+
+  <div class="snow" id="snow"></div>
+
+  <audio id="bgMusic" loop>
+    <source src="https://www.bensound.com/bensound-music/bensound-christmas.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    let selectedBackground = 'https://i.ibb.co/pbCVyPf/christmas-bg.jpg';
+    let uploadedImage = null;
+    let isMusicPlaying = false;
+
+    const music = document.getElementById("bgMusic");
+    const musicBtn = document.getElementById("musicBtn");
+
+    // Background design selector
+    function selectDesign(element, bgUrl) {
+      selectedBackground = bgUrl;
+      document.querySelectorAll('.design-option').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+    }
+
+    // Handle image upload
+    document.getElementById("imageInput").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          uploadedImage = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Generate the card
+    function generateCard() {
+      const name = document.getElementById("nameInput").value.trim();
+      const card = document.getElementById("card");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      if (name === "") {
+        alert("Please enter your name 🎁");
+        return;
+      }
+
+      card.style.backgroundImage = `url('${selectedBackground}')`;
+      card.innerHTML = "";
+
+      if (uploadedImage) {
+        const img = document.createElement("img");
+        img.src = uploadedImage;
+        card.appendChild(img);
+      }
+
+      const text = document.createElement("div");
+      text.innerHTML = `Merry Christmas, <br> ${name}! 🎅🎄`;
+      card.appendChild(text);
+
+      card.classList.add("show");
+      downloadBtn.style.display = "inline-block";
+    }
+
+    // Download card as PNG
+    function downloadCard() {
+      const card = document.getElementById("card");
+      html2canvas(card).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "christmas_card.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
+    // Music controls
+    function toggleMusic() {
+      if (isMusicPlaying) {
+        music.pause();
+        musicBtn.textContent = "Play Music 🎵";
+      } else {
+        music.play();
+        musicBtn.textContent = "Pause Music 🔇";
+      }
+      isMusicPlaying = !isMusicPlaying;
+    }
+
+    // Falling snow ❄️
+    const snowContainer = document.getElementById("snow");
+    for (let i = 0; i < 50; i++) {
+      const flake = document.createElement("div");
+      flake.classList.add("flake");
+      flake.textContent = "❄";
+      flake.style.left = Math.random() * 100 + "vw";
+      flake.style.animationDuration = 5 + Math.random() * 5 + "s";
+      flake.style.fontSize = 12 + Math.random() * 20 + "px";
+      snowContainer.appendChild(flake);
+    }
+  </script>
+</body>
+</html>
